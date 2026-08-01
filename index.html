@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>OntoCraft PlantUML Studio</title>
+  <meta name="description" content="PlantUML 스크립트를 작성하여 실시간 다이어그램을 생성하고 PNG, SVG, PDF로 내보내기할 수 있는 전문 도구입니다.">
+  
+  <!-- Google Fonts: Outfit -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+  
+  <!-- Main Stylesheet -->
+  <link rel="stylesheet" href="/src/style.css">
+  
+  <!-- Monaco Editor AMD Loader -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.39.0/min/vs/loader.min.js"></script>
+</head>
+<body>
+  <div id="app">
+    <!-- Header -->
+    <header class="app-header">
+      <div class="logo">
+        <svg class="logo-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polygon points="12 2 2 7 12 12 22 7 12 2"></polygon>
+          <polyline points="2 17 12 22 22 17"></polyline>
+          <polyline points="2 12 12 17 22 12"></polyline>
+        </svg>
+        <span class="logo-text">OntoCraft <span class="accent-text">PlantUML Studio</span></span>
+      </div>
+      <div class="header-controls">
+        <label class="toggle-control">
+          <input type="checkbox" id="auto-render-toggle" checked>
+          <span class="toggle-slider"></span>
+          <span class="toggle-label">실시간 렌더링</span>
+        </label>
+        <button id="render-btn" class="btn btn-primary" title="다이어그램을 즉시 렌더링합니다 (Ctrl+Enter)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="btn-icon">
+            <polygon points="5 3 19 12 5 21 5 3"></polygon>
+          </svg>
+          렌더링
+        </button>
+      </div>
+    </header>
+
+    <div class="main-container">
+      <!-- Left Icon Sidebar -->
+      <aside class="sidebar-icons">
+        <nav class="sidebar-nav">
+          <button class="nav-item active" data-diagram="sequence" title="Sequence Diagram">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path>
+            </svg>
+            <span class="nav-label">Sequence</span>
+          </button>
+          <button class="nav-item" data-diagram="class" title="Class Diagram">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+              <line x1="3" y1="9" x2="21" y2="9"></line>
+              <line x1="9" y1="21" x2="9" y2="9"></line>
+            </svg>
+            <span class="nav-label">Class</span>
+          </button>
+          <button class="nav-item" data-diagram="usecase" title="Use Case Diagram">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="10"></circle>
+              <path d="M8 14s1.5 2 4 2 4-2 4-2"></path>
+              <line x1="9" y1="9" x2="9.01" y2="9"></line>
+              <line x1="15" y1="9" x2="15.01" y2="9"></line>
+            </svg>
+            <span class="nav-label">Use Case</span>
+          </button>
+          <button class="nav-item" data-diagram="activity" title="Activity Diagram">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="5" r="3"></circle>
+              <line x1="12" y1="8" x2="12" y2="16"></line>
+              <path d="m8 12 4 4 4-4"></path>
+              <circle cx="12" cy="19" r="3"></circle>
+            </svg>
+            <span class="nav-label">Activity</span>
+          </button>
+          <button class="nav-item" data-diagram="state" title="State Diagram">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="6" cy="12" r="3"></circle>
+              <circle cx="18" cy="12" r="3"></circle>
+              <line x1="9" y1="12" x2="15" y2="12"></line>
+              <polygon points="13 9 15 12 13 15"></polygon>
+            </svg>
+            <span class="nav-label">State</span>
+          </button>
+          <button class="nav-item" data-diagram="component" title="Component Diagram">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="2" y="7" width="20" height="14" rx="2" ry="2"></rect>
+              <rect x="6" y="2" width="12" height="5" rx="1" ry="1"></rect>
+              <line x1="6" y1="12" x2="18" y2="12"></line>
+            </svg>
+            <span class="nav-label">Component</span>
+          </button>
+          <button class="nav-item" data-diagram="deployment" title="Deployment Diagram">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect>
+              <line x1="8" y1="21" x2="16" y2="21"></line>
+              <line x1="12" y1="17" x2="12" y2="21"></line>
+            </svg>
+            <span class="nav-label">Deployment</span>
+          </button>
+          <button class="nav-item" data-diagram="timing" title="Timing Diagram">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="22 10 18 10 15 4 9 17 6 12 2 12"></polyline>
+            </svg>
+            <span class="nav-label">Timing</span>
+          </button>
+          <button class="nav-item" data-diagram="gantt" title="Gantt Chart">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="4" y1="6" x2="20" y2="6"></line>
+              <line x1="4" y1="12" x2="14" y2="12"></line>
+              <line x1="4" y1="18" x2="18" y2="18"></line>
+            </svg>
+            <span class="nav-label">Gantt</span>
+          </button>
+          <button class="nav-item" data-diagram="mindmap" title="MindMap">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="3"></circle>
+              <circle cx="5" cy="5" r="2"></circle>
+              <circle cx="19" cy="5" r="2"></circle>
+              <circle cx="5" cy="19" r="2"></circle>
+              <circle cx="19" cy="19" r="2"></circle>
+              <line x1="7" y1="7" x2="10.5" y2="10.5"></line>
+              <line x1="17" y1="7" x2="13.5" y2="10.5"></line>
+              <line x1="7" y1="17" x2="10.5" y2="13.5"></line>
+              <line x1="17" y1="17" x2="13.5" y2="13.5"></line>
+            </svg>
+            <span class="nav-label">MindMap</span>
+          </button>
+          <button class="nav-item" data-diagram="wbs" title="WBS (Work Breakdown Structure)">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="9" y="2" width="6" height="4" rx="1"></rect>
+              <rect x="2" y="10" width="6" height="4" rx="1"></rect>
+              <rect x="16" y="10" width="6" height="4" rx="1"></rect>
+              <rect x="9" y="18" width="6" height="4" rx="1"></rect>
+              <path d="M12 6v4m0 0H5v4m7-4h9v4m-9 0v4"></path>
+            </svg>
+            <span class="nav-label">WBS</span>
+          </button>
+          <button class="nav-item" data-diagram="json" title="JSON/YAML Diagram">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+              <polyline points="14 2 14 8 20 8"></polyline>
+              <line x1="16" y1="13" x2="8" y2="13"></line>
+              <line x1="16" y1="17" x2="8" y2="17"></line>
+              <polyline points="10 9 9 9 8 9"></polyline>
+            </svg>
+            <span class="nav-label">JSON/YAML</span>
+          </button>
+        </nav>
+      </aside>
+
+      <!-- Template Details Panel (Drawer) -->
+      <section class="template-panel" id="template-panel">
+        <div class="panel-header">
+          <h3 id="template-title">Sequence Diagram</h3>
+          <button class="close-panel-btn" id="close-panel-btn">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="18" y1="6" x2="6" y2="18"></line>
+              <line x1="6" y1="6" x2="18" y2="18"></line>
+            </svg>
+          </button>
+        </div>
+        <div class="panel-body">
+          <p id="template-description" class="template-description">객체 간의 상호작용과 시간적 흐름을 시각화합니다.</p>
+          <div class="template-preview-box">
+            <div class="preview-mini-label">다이어그램 미리보기</div>
+            <div id="template-thumbnail" class="template-thumbnail">
+              <!-- Mini drawing or mockup icon of the selected diagram style -->
+            </div>
+          </div>
+          <button id="apply-template-btn" class="btn btn-secondary btn-full">
+            템플릿 코드 적용하기
+          </button>
+        </div>
+      </section>
+
+      <!-- Workspace Area: Editor & Preview Split -->
+      <main class="workspace">
+        <!-- Editor Section (Left Pane) -->
+        <section class="editor-pane">
+          <div class="pane-header">
+            <div class="pane-title">
+              <svg class="pane-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M16 18L22 12L16 6"></path>
+                <path d="M8 6L2 12L8 18"></path>
+              </svg>
+              스크립트 에디터
+            </div>
+            <div class="editor-controls">
+              <button id="clear-editor-btn" class="pane-btn-action" title="에디터 비우기">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 14px; height: 14px;">
+                  <polyline points="3 6 5 6 21 6"></polyline>
+                  <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                </svg>
+                비우기
+              </button>
+            </div>
+          </div>
+          <div class="editor-wrapper">
+            <div id="monaco-container"></div>
+          </div>
+        </section>
+
+        <!-- Preview Section (Right Pane) -->
+        <section class="preview-pane">
+          <div class="pane-header">
+            <div class="pane-title">
+              <svg class="pane-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                <circle cx="8.5" cy="8.5" r="1.5"></circle>
+                <polyline points="21 15 16 10 5 21"></polyline>
+              </svg>
+              다이어그램 뷰어
+            </div>
+            
+            <div class="viewer-actions">
+              <!-- Zoom Controls -->
+              <div class="zoom-controls">
+                <button id="zoom-out-btn" class="viewer-btn" title="축소">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="5" y1="12" x2="19" y2="12"></line>
+                  </svg>
+                </button>
+                <span id="zoom-level">100%</span>
+                <button id="zoom-in-btn" class="viewer-btn" title="확대">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="12" y1="5" x2="12" y2="19"></line>
+                    <line x1="5" y1="12" x2="19" y2="12"></line>
+                  </svg>
+                </button>
+                <button id="zoom-reset-btn" class="viewer-btn" title="원본 크기">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M15 3h6v6"></path>
+                    <path d="M9 21H3v-6"></path>
+                    <path d="M21 3l-7 7"></path>
+                    <path d="M3 21l7-7"></path>
+                  </svg>
+                </button>
+              </div>
+
+              <!-- Export Button Dropdown -->
+              <div class="export-dropdown-wrapper">
+                <button id="export-dropdown-btn" class="btn btn-secondary">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="btn-icon">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                    <polyline points="7 10 12 15 17 10"></polyline>
+                    <line x1="12" y1="15" x2="12" y2="3"></line>
+                  </svg>
+                  저장하기
+                </button>
+                <div id="export-menu" class="export-menu">
+                  <button class="export-item" data-format="png">
+                    <span class="export-format">PNG</span>
+                    <span class="export-desc">고화질 이미지 파일</span>
+                  </button>
+                  <button class="export-item" data-format="svg">
+                    <span class="export-format">SVG</span>
+                    <span class="export-desc">확장 가능한 벡터 그래픽스</span>
+                  </button>
+                  <button class="export-item" data-format="pdf">
+                    <span class="export-format">PDF</span>
+                    <span class="export-desc">문서 보관용 벡터 문서</span>
+                  </button>
+                  <button class="export-item" data-format="print">
+                    <span class="export-format">인쇄하기 (Print)</span>
+                    <span class="export-desc">프린터 출력 및 브라우저 PDF 저장</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Diagram Viewer Box -->
+          <div class="diagram-viewport-wrapper">
+            <div id="diagram-viewport" class="diagram-viewport">
+              <div id="diagram-loading" class="diagram-loading hidden">
+                <div class="spinner"></div>
+                <span>다이어그램을 로딩하고 있습니다...</span>
+              </div>
+              <div id="diagram-empty" class="diagram-empty">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="empty-icon">
+                  <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
+                  <polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline>
+                  <line x1="12" y1="22.08" x2="12" y2="12"></line>
+                </svg>
+                <h3>작성된 다이어그램이 없습니다</h3>
+                <p>왼쪽 에디터에 PlantUML 스크립트를 입력하거나,<br>아이콘 메뉴에서 다이어그램 템플릿을 선택하세요.</p>
+              </div>
+              <div id="diagram-error" class="diagram-error hidden">
+                <div class="error-icon">⚠️</div>
+                <div class="error-details">
+                  <h3>렌더링 에러가 발생했습니다</h3>
+                  <p id="error-message">PlantUML 코드의 문법을 다시 한번 확인해 주세요.</p>
+                </div>
+              </div>
+              <div id="diagram-container" class="diagram-container hidden">
+                <img id="diagram-img" alt="PlantUML Diagram" draggable="false" />
+              </div>
+            </div>
+            
+            <!-- OntoCraft.com copyright notice visual overlay (sticky display, always visible) -->
+            <div class="copyright-watermark">
+              © OntoCraft.com
+            </div>
+          </div>
+        </section>
+      </main>
+    </div>
+  </div>
+
+  <!-- App logic entry -->
+  <script type="module" src="/src/main.js"></script>
+</body>
+</html>
