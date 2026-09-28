@@ -453,7 +453,7 @@ function initEditor() {
     window.require(['vs/editor/editor.main'], function() {
       const container = document.getElementById('monaco-container');
       editor = window.monaco.editor.create(container, {
-        value: TEMPLATES.sequence.code,
+        value: getInitialCode(),
         language: 'plaintext',
         theme: 'vs-dark',
         automaticLayout: true,
@@ -473,6 +473,7 @@ function initEditor() {
       // Editor content change listener (debounced auto-render)
       let renderTimeout;
       editor.onDidChangeModelContent(() => {
+        saveDraft();
         const autoRender = document.getElementById('auto-render-toggle').checked;
         if (autoRender) {
           clearTimeout(renderTimeout);
@@ -502,10 +503,11 @@ function useFallbackEditor() {
   const container = document.getElementById('monaco-container');
   container.innerHTML = `<textarea id="fallback-textarea" class="fallback-textarea" placeholder="이곳에 PlantUML 스크립트를 입력해 주세요..."></textarea>`;
   const textarea = document.getElementById('fallback-textarea');
-  textarea.value = TEMPLATES.sequence.code;
+  textarea.value = getInitialCode();
 
   let renderTimeout;
   textarea.addEventListener('input', () => {
+    saveDraft();
     const autoRender = document.getElementById('auto-render-toggle').checked;
     if (autoRender) {
       clearTimeout(renderTimeout);
@@ -825,6 +827,8 @@ exportMenu.addEventListener('click', (e) => {
     downloadFile(urls.svg, `${filename}.svg`);
   } else if (format === 'pdf') {
     exportToPDF(urls.png, `${filename}.pdf`);
+  } else if (format === 'puml') {
+    savePumlFile(script, `${filename}.puml`);
   } else if (format === 'print') {
     window.print();
   }
@@ -893,3 +897,177 @@ document.getElementById('clear-editor-btn').addEventListener('click', () => {
 document.addEventListener('DOMContentLoaded', () => {
   initEditor();
 });
+
+// ── 공유 · 파일 · 자동 저장 ──────────────────────────────────────────
+// 셋 다 브라우저 안에서 끝난다. 서버도 저장소도 쓰지 않는다.
+// 링크 공유는 코드를 압축해 주소 뒤에 붙이는 방식이라, 우리 서버가 멈춰도 링크는 살아 있다.
+
+const DRAFT_KEY = 'plantuml-studio:draft';
+const LONG_URL_WARN = 2000;
+
+// PlantUML 인코딩의 역. encodePlantUML 이 쓰는 알파벳을 그대로 되짚는다.
+function decode6bit(c) {
+  const code = c.charCodeAt(0);
+  if (code >= 48 && code <= 57) return code - 48;       // '0'-'9'
+  if (code >= 65 && code <= 90) return code - 65 + 10;  // 'A'-'Z'
+  if (code >= 97 && code <= 122) return code - 97 + 36; // 'a'-'z'
+  if (c === '-') return 62;
+  if (c === '_') return 63;
+  return -1;
+}
+
+function decode64(s) {
+  const bytes = [];
+  for (let i = 0; i < s.length; i += 4) {
+    const c1 = decode6bit(s[i]);
+    const c2 = decode6bit(s[i + 1] || '0');
+    const c3 = decode6bit(s[i + 2] || '0');
+    const c4 = decode6bit(s[i + 3] || '0');
+    if (c1 < 0 || c2 < 0) break;
+    bytes.push(((c1 << 2) | (c2 >> 4)) & 0xFF);
+    if (i + 2 < s.length) bytes.push(((c2 << 4) | (c3 >> 2)) & 0xFF);
+    if (i + 3 < s.length) bytes.push(((c3 << 6) | c4) & 0xFF);
+  }
+  return new Uint8Array(bytes);
+}
+
+function decodePlantUML(encoded) {
+  return new TextDecoder().decode(pako.inflateRaw(decode64(encoded)));
+}
+
+// 열 때 무엇을 보여 줄지: 링크에 담긴 코드 > 저장해 둔 작업 > 기본 템플릿.
+// 링크가 이기는 까닭은, 누가 보내 준 링크를 열었는데 내 옛 작업이 뜨면 안 되기 때문이다.
+function getInitialCode() {
+  const hash = window.location.hash.slice(1);
+  if (hash) {
+    try {
+      const code = decodePlantUML(hash);
+      if (code.includes('@start')) return code;
+    } catch (err) {
+      console.warn('[share] 링크의 코드를 읽지 못했습니다', err);
+    }
+  }
+  try {
+    const saved = localStorage.getItem(DRAFT_KEY);
+    if (saved && saved.trim()) return saved;
+  } catch (err) {
+    // 사생활 보호 모드 등에서 막힌다. 기본 템플릿으로 간다.
+  }
+  return TEMPLATES.sequence.code;
+}
+
+let draftTimer;
+function saveDraft() {
+  clearTimeout(draftTimer);
+  draftTimer = setTimeout(() => {
+    try {
+      if (editor) localStorage.setItem(DRAFT_KEY, editor.getValue());
+    } catch (err) {
+      // 저장 공간이 없거나 막혀 있으면 그냥 넘어간다. 편집을 막지 않는다.
+    }
+  }, 500);
+}
+
+function showToast(message) {
+  let el = document.getElementById('app-toast');
+  if (!el) {
+    el = document.createElement('div');
+    el.id = 'app-toast';
+    el.className = 'app-toast';
+    document.body.appendChild(el);
+  }
+  el.textContent = message;
+  el.classList.add('show');
+  clearTimeout(el._timer);
+  el._timer = setTimeout(() => el.classList.remove('show'), 2400);
+}
+
+async function copyShareLink() {
+  if (!editor) return;
+  const script = editor.getValue().trim();
+  if (!script) {
+    alert('공유할 코드가 없습니다.');
+    return;
+  }
+
+  const encoded = encodePlantUML(script);
+  const url = `${location.origin}${location.pathname}#${encoded}`;
+
+  if (url.length > LONG_URL_WARN) {
+    const ok = confirm(
+      `다이어그램이 길어 링크가 ${url.length}자입니다.\n` +
+      '메신저에 따라 잘릴 수 있습니다. 그런 경우에는 .puml 파일로 저장해 보내세요.\n\n' +
+      '그래도 링크를 복사할까요?'
+    );
+    if (!ok) return;
+  }
+
+  // 주소창도 같이 바꿔 둔다. 새로고침해도 같은 다이어그램이 열린다.
+  history.replaceState(null, '', `#${encoded}`);
+
+  try {
+    await navigator.clipboard.writeText(url);
+    showToast('링크를 복사했습니다');
+  } catch (err) {
+    window.prompt('아래 링크를 복사하세요', url);
+  }
+}
+
+function savePumlFile(script, filename) {
+  const blob = new Blob([script], { type: 'text/plain;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = filename;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(url);
+  showToast(`${filename} 으로 저장했습니다`);
+}
+
+async function loadFile(file) {
+  if (!file || !editor) return;
+  const text = await file.text();
+  if (!text.trim()) {
+    alert('파일이 비어 있습니다.');
+    return;
+  }
+  if (editor.getValue().trim() && !confirm('지금 코드를 파일 내용으로 바꿉니다. 계속할까요?')) {
+    return;
+  }
+  editor.setValue(text);
+  renderDiagram();
+  showToast(`${file.name} 을 열었습니다`);
+}
+
+const shareBtn = document.getElementById('share-btn');
+const openFileBtn = document.getElementById('open-file-btn');
+const fileInput = document.getElementById('file-input');
+
+if (shareBtn) shareBtn.addEventListener('click', copyShareLink);
+
+if (openFileBtn && fileInput) {
+  openFileBtn.addEventListener('click', () => fileInput.click());
+  fileInput.addEventListener('change', async () => {
+    await loadFile(fileInput.files && fileInput.files[0]);
+    fileInput.value = ''; // 같은 파일을 다시 골라도 열리게
+  });
+}
+
+// 끌어다 놓아도 열린다. 파일을 고르는 것보다 이쪽이 빠른 사람이 있다.
+const editorWrapper = document.querySelector('.editor-wrapper');
+if (editorWrapper) {
+  editorWrapper.addEventListener('dragover', (e) => {
+    e.preventDefault();
+    editorWrapper.classList.add('is-dropping');
+  });
+  editorWrapper.addEventListener('dragleave', () => {
+    editorWrapper.classList.remove('is-dropping');
+  });
+  editorWrapper.addEventListener('drop', async (e) => {
+    e.preventDefault();
+    editorWrapper.classList.remove('is-dropping');
+    await loadFile(e.dataTransfer && e.dataTransfer.files[0]);
+  });
+}

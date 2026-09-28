@@ -818,3 +818,39 @@ body {
   }
 }
 
+
+/* ── 알림 토스트 ────────────────────────────────────────────────── */
+.app-toast {
+  position: fixed;
+  left: 50%;
+  bottom: 28px;
+  transform: translateX(-50%) translateY(12px);
+  padding: 10px 18px;
+  border-radius: 8px;
+  background: rgba(20, 20, 28, 0.96);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: #e6e6ef;
+  font-size: 13px;
+  line-height: 1.4;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.18s ease, transform 0.18s ease;
+  z-index: 9999;
+}
+
+.app-toast.show {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+
+/* 파일을 끌어다 놓는 동안 */
+.editor-wrapper.is-dropping {
+  outline: 2px dashed var(--accent, #5b8cff);
+  outline-offset: -4px;
+}
+
+@media print {
+  .app-toast {
+    display: none !important;
+  }
+}
