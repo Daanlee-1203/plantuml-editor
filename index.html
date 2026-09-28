@@ -194,6 +194,22 @@
               스크립트 에디터
             </div>
             <div class="editor-controls">
+              <button id="share-btn" class="pane-btn-action" title="지금 코드가 담긴 링크를 복사합니다">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 14px; height: 14px;">
+                  <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path>
+                  <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path>
+                </svg>
+                링크 복사
+              </button>
+              <button id="open-file-btn" class="pane-btn-action" title="PlantUML 파일 열기">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 14px; height: 14px;">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                  <polyline points="17 8 12 3 7 8"></polyline>
+                  <line x1="12" y1="3" x2="12" y2="15"></line>
+                </svg>
+                열기
+              </button>
+              <input type="file" id="file-input" accept=".puml,.plantuml,.txt,.uml,.iuml" hidden>
               <button id="clear-editor-btn" class="pane-btn-action" title="에디터 비우기">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 14px; height: 14px;">
                   <polyline points="3 6 5 6 21 6"></polyline>
@@ -267,6 +283,10 @@
                   <button class="export-item" data-format="pdf">
                     <span class="export-format">PDF</span>
                     <span class="export-desc">문서 보관용 벡터 문서</span>
+                  </button>
+                  <button class="export-item" data-format="puml">
+                    <span class="export-format">PlantUML</span>
+                    <span class="export-desc">코드를 .puml 파일로 저장</span>
                   </button>
                   <button class="export-item" data-format="print">
                     <span class="export-format">인쇄하기 (Print)</span>
