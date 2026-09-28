@@ -9,6 +9,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.129.0",
     "jspdf": "^2.5.1",
     "pako": "^2.1.0"
   },

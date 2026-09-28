@@ -818,3 +818,61 @@ body {
   }
 }
 
+
+/* ── AI 초안 입력줄 ─────────────────────────────────────────────── */
+.ai-bar {
+  display: flex;
+  gap: 8px;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--border-color, #2a2a35);
+}
+
+.ai-input {
+  flex: 1;
+  min-width: 0;
+  height: 34px;
+  padding: 0 12px;
+  border: 1px solid var(--border-color, #2a2a35);
+  border-radius: 6px;
+  background: var(--bg-input, #16161d);
+  color: var(--text-primary, #e6e6ef);
+  font-size: 13px;
+  font-family: inherit;
+}
+
+.ai-input::placeholder {
+  color: var(--text-muted, #6b6b7b);
+}
+
+.ai-input:focus {
+  outline: none;
+  border-color: var(--accent, #5b8cff);
+}
+
+.ai-input:disabled {
+  opacity: 0.6;
+}
+
+.btn-ai {
+  flex-shrink: 0;
+  height: 34px;
+  padding: 0 14px;
+  white-space: nowrap;
+}
+
+.btn-ai:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.ai-hint {
+  margin: 0;
+  padding: 0 12px 10px;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--text-muted, #6b6b7b);
+}
+
+.ai-hint.is-error {
+  color: #ff6b6b;
+}

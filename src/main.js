@@ -893,3 +893,78 @@ document.getElementById('clear-editor-btn').addEventListener('click', () => {
 document.addEventListener('DOMContentLoaded', () => {
   initEditor();
 });
+
+// ── AI 초안 ──────────────────────────────────────────────────────────
+// 적은 말을 PlantUML 코드로 옮겨 에디터에 넣는다. 모델 호출은 /api/generate 가 맡는다.
+// 브라우저에서 직접 부르지 않는 까닭은 API 키 때문이다 — 키가 프런트에 있으면 누구나 쓴다.
+
+const aiPromptInput = document.getElementById('ai-prompt');
+const aiGenerateBtn = document.getElementById('ai-generate-btn');
+const aiGenerateLabel = document.getElementById('ai-generate-label');
+const aiHint = document.getElementById('ai-hint');
+
+function showAiHint(message, isError) {
+  if (!aiHint) return;
+  if (!message) {
+    aiHint.hidden = true;
+    aiHint.textContent = '';
+    return;
+  }
+  aiHint.textContent = message;
+  aiHint.classList.toggle('is-error', Boolean(isError));
+  aiHint.hidden = false;
+}
+
+async function generateFromPrompt() {
+  const prompt = aiPromptInput.value.trim();
+  if (!prompt) {
+    aiPromptInput.focus();
+    return;
+  }
+
+  // 덮어쓰기 전에 묻는다. 한참 쓴 코드가 말없이 사라지면 안 된다.
+  const current = editor ? editor.getValue().trim() : '';
+  if (current && !confirm('지금 코드를 새 초안으로 바꿉니다. 계속할까요?')) {
+    return;
+  }
+
+  aiGenerateBtn.disabled = true;
+  aiPromptInput.disabled = true;
+  aiGenerateLabel.textContent = '만드는 중';
+  showAiHint('', false);
+
+  try {
+    const res = await fetch('/api/generate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ prompt })
+    });
+    const data = await res.json().catch(() => ({}));
+
+    if (!res.ok) {
+      showAiHint(data.error || '초안을 만들지 못했습니다.', true);
+      return;
+    }
+
+    editor.setValue(data.uml);
+    renderDiagram();
+    showAiHint('초안을 넣었습니다. 코드를 고쳐 다듬으세요.', false);
+  } catch (err) {
+    console.error('[ai] 요청 실패', err);
+    showAiHint('서버에 닿지 못했습니다. 잠시 뒤 다시 시도해 주세요.', true);
+  } finally {
+    aiGenerateBtn.disabled = false;
+    aiPromptInput.disabled = false;
+    aiGenerateLabel.textContent = '초안 만들기';
+  }
+}
+
+if (aiGenerateBtn && aiPromptInput) {
+  aiGenerateBtn.addEventListener('click', generateFromPrompt);
+  aiPromptInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      generateFromPrompt();
+    }
+  });
+}
